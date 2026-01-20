@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialBuzz Webhook Receiver</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        h1 i {
+            margin-right: 15px;
+        }
+        
+        .subtitle {
+            color: #b0b0b0;
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 20px;
+            background: rgba(46, 204, 113, 0.2);
+            border-radius: 50px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #2ecc71;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .webhook-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .webhook-info h2 {
+            color: #feb47b;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+        }
+        
+        .webhook-info h2 i {
+            margin-right: 10px;
+        }
+        
+        .url-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            word-break: break-all;
+            margin-bottom: 15px;
+            border-left: 5px solid #ff7e5f;
+        }
+        
+        .token-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            word-break: break-all;
+            border-left: 5px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .webhook-data {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        
+        @media (min-width: 768px) {
+            .webhook-data {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+        
+        .webhook-events {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .webhook-events h2 {
+            color: #feb47b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .webhook-events h2 i {
+            margin-right: 10px;
+        }
+        
+        .clear-btn {
+            background: rgba(231, 76, 60, 0.3);
+            color: #ff7979;
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .clear-btn:hover {
+            background: rgba(231, 76, 60, 0.5);
+        }
+        
+        .event-list {
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        .event-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #2ecc71;
+            transition: all 0.3s;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .event-item.new {
+            border-left-color: #ff7e5f;
+            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.2);
+        }
+        
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .event-type {
+            background: #2ecc71;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .event-time {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+        
+        .event-details {
+            margin-bottom: 15px;
+        }
+        
+        .event-field {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            margin-bottom: 8px;
+        }
+        
+        .field-label {
+            color: #b0b0b0;
+            font-weight: 600;
+        }
+        
+        .field-value {
+            color: white;
+            word-break: break-word;
+        }
+        
+        .amount {
+            color: #2ecc71;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .stats-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stats-panel h2 {
+            color: #feb47b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .stats-panel h2 i {
+            margin-right: 10px;
+        }
+        
+        .stat-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .stat-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border-top: 5px solid #667eea;
+        }
+        
+        .stat-card.total {
+            border-top-color: #2ecc71;
+        }
+        
+        .stat-card.today {
+            border-top-color: #ff7e5f;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            color: white;
+        }
+        
+        .stat-label {
+            color: #b0b0b0;
+            font-size: 1rem;
+        }
+        
+        .recent-products {
+            margin-top: 25px;
+        }
+        
+        .product-item {
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .product-icon {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .product-info {
+            flex-grow: 1;
+        }
+        
+        .product-name {
+            font-weight: 600;
+            color: white;
+        }
+        
+        .product-count {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+        
+        .no-events {
+            text-align: center;
+            padding: 40px 20px;
+            color: #b0b0b0;
+        }
+        
+        .no-events i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+            animation: slideInRight 0.5s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        
+        .api-example {
+            background: rgba(155, 89, 182, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 5px solid #9b59b6;
+        }
+        
+        .api-example h3 {
+            color: #9b59b6;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .api-example h3 i {
+            margin-right: 10px;
+        }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin: 10px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        .important-note {
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 5px solid #e74c3c;
+        }
+        
+        .important-note h4 {
+            color: #e74c3c;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-broadcast-tower"></i> SocialBuzz Webhook Receiver</h1>
+            <p class="subtitle">Webhook Endpoint untuk menerima data dari SocialBuzz</p>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Siap menerima POST request dari SocialBuzz</span>
+            </div>
+        </header>
+        
+        <div class="important-note">
+            <h4><i class="fas fa-exclamation-triangle"></i> PERHATIAN: Error 405 Method Not Allowed</h4>
+            <p>Anda mendapatkan error 405 karena URL webhook tidak menerima POST request.</p>
+            <p>Gunakan URL berikut yang sudah mendukung POST:</p>
+            <div class="url-box" style="margin-top: 10px;" id="correctWebhookUrl">Loading...</div>
+        </div>
+        
+        <div class="webhook-info">
+            <h2><i class="fas fa-link"></i> Webhook URL untuk SocialBuzz</h2>
+            <p>Salin URL berikut dan tempelkan di pengaturan webhook SocialBuzz:</p>
+            <div class="url-box" id="webhookUrl">Loading...</div>
+            
+            <h2><i class="fas fa-key"></i> Webhook Token (Header)</h2>
+            <p>SocialBuzz harus mengirim token ini di header:</p>
+            <div class="token-box">
+                <span id="webhookToken">sbwhoek-wt6dvi53rkwmyqpncpml2nra</span>
+                <button class="copy-btn" id="copyTokenBtn">
+                    <i class="fas fa-copy"></i> Salin Token
+                </button>
+            </div>
+            
+            <div class="api-example">
+                <h3><i class="fas fa-code"></i> Contoh Request dari SocialBuzz</h3>
+                <p>SocialBuzz harus mengirim POST request dengan format:</p>
+                <div class="code-block">
+POST /receive-webhook HTTP/1.1
+Host: ${window.location.hostname}
+Content-Type: application/json
+X-Webhook-Token: sbwhoek-wt6dvi53rkwmyqpncpml2nra
+
+{
+  "event": "payment.success",
+  "transaction_id": "SB-987654321",
+  "customer": {
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "product": "Kopi Premium",
+  "amount": 150000,
+  "currency": "IDR",
+  "timestamp": "2026-01-20T15:30:00Z"
+}
+                </div>
+            </div>
+        </div>
+        
+        <div class="webhook-data">
+            <div class="webhook-events">
+                <h2>
+                    <span><i class="fas fa-history"></i> Transaksi Terbaru</span>
+                    <button class="clear-btn" id="clearEventsBtn">
+                        <i class="fas fa-trash"></i> Hapus Semua
+                    </button>
+                </h2>
+                
+                <div class="event-list" id="eventList">
+                    <div class="no-events" id="noEvents">
+                        <i class="fas fa-inbox"></i>
+                        <h3>Belum ada transaksi</h3>
+                        <p>Transaksi dari SocialBuzz akan muncul di sini</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-panel">
+                <h2><i class="fas fa-chart-bar"></i> Statistik</h2>
+                
+                <div class="stat-cards">
+                    <div class="stat-card total">
+                        <div class="stat-label">Total Transaksi</div>
+                        <div class="stat-value" id="totalTransactions">0</div>
+                        <div class="stat-label">Semua Waktu</div>
+                    </div>
+                    
+                    <div class="stat-card today">
+                        <div class="stat-label">Transaksi Hari Ini</div>
+                        <div class="stat-value" id="todayTransactions">0</div>
+                        <div class="stat-label" id="todayDate">20 Jan 2026</div>
+                    </div>
+                </div>
+                
+                <div class="recent-products">
+                    <h3><i class="fas fa-shopping-bag"></i> Produk Populer</h3>
+                    <div id="popularProducts">
+                        <div class="no-events" style="padding: 20px 0;">
+                            <i class="fas fa-box-open"></i>
+                            <p>Belum ada data produk</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: rgba(52, 152, 219, 0.1); border-radius: 10px;">
+                    <h4><i class="fas fa-server"></i> Endpoint Aktif</h4>
+                    <p>Endpoint webhook aktif di:</p>
+                    <div class="code-block" style="font-size: 0.8rem; margin: 10px 0;">
+                        ${window.location.origin}/receive-webhook
+                    </div>
+                    <p>Method: POST, Content-Type: application/json</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Webhook endpoint URL
+        const WEBHOOK_ENDPOINT = '/receive-webhook';
+        
+        // Token yang harus dicocokkan
+        const REQUIRED_TOKEN = 'sbwhoek-wt6dvi53rkwmyqpncpml2nra';
+        
+        // Inisialisasi data
+        let events = JSON.parse(localStorage.getItem('socialbuzzEvents')) || [];
+        let todayTransactions = 0;
+        let totalTransactions = events.length;
+        let popularProducts = {};
+        const today = new Date().toDateString();
+        
+        // Setup webhook endpoint
+        function setupWebhookEndpoint() {
+            // Di browser, kita buat simulated endpoint menggunakan service workers atau API route
+            console.log(`Webhook endpoint siap di: ${window.location.origin}${WEBHOOK_ENDPOINT}`);
+            console.log(`Token required: ${REQUIRED_TOKEN}`);
+            
+            // Untuk testing langsung dari halaman ini
+            window.receiveWebhookFromSocialBuzz = function(data, token) {
+                return processWebhook(data, token);
+            };
+        }
+        
+        // Inisialisasi statistik
+        function initializeStats() {
+            // Hitung transaksi hari ini
+            todayTransactions = events.filter(event => {
+                const eventDate = new Date(event.timestamp).toDateString();
+                return eventDate === today;
+            }).length;
+            
+            // Hitung produk populer
+            popularProducts = {};
+            events.forEach(event => {
+                if (event.product) {
+                    if (popularProducts[event.product]) {
+                        popularProducts[event.product] += 1;
+                    } else {
+                        popularProducts[event.product] = 1;
+                    }
+                }
+            });
+            
+            updateStatsDisplay();
+            updatePopularProductsDisplay();
+        }
+        
+        // Update tampilan statistik
+        function updateStatsDisplay() {
+            document.getElementById('totalTransactions').textContent = totalTransactions;
+            document.getElementById('todayTransactions').textContent = todayTransactions;
+            document.getElementById('todayDate').textContent = new Date().toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+        
+        // Update produk populer
+        function updatePopularProductsDisplay() {
+            const container = document.getElementById('popularProducts');
+            const products = Object.entries(popularProducts);
+            
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="no-events" style="padding: 20px 0;">
+                        <i class="fas fa-box-open"></i>
+                        <p>Belum ada data produk</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            products.sort((a, b) => b[1] - a[1]);
+            const topProducts = products.slice(0, 5);
+            
+            container.innerHTML = topProducts.map(([product, count], index) => {
+                const icons = ['fa-mug-hot', 'fa-tshirt', 'fa-book', 'fa-gamepad', 'fa-headphones'];
+                const colors = ['#667eea', '#2ecc71', '#ff7e5f', '#9b59b6', '#f39c12'];
+                
+                return `
+                    <div class="product-item">
+                        <div class="product-icon" style="background: ${colors[index % colors.length]}">
+                            <i class="fas ${icons[index % icons.length]}"></i>
+                        </div>
+                        <div class="product-info">
+                            <div class="product-name">${product}</div>
+                            <div class="product-count">${count} pembelian</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Format waktu
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }) + ' - ' + date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+        
+        // Tampilkan notifikasi
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Proses webhook
+        function processWebhook(data, token) {
+            // Verifikasi token
+            if (token !== REQUIRED_TOKEN) {
+                showNotification('Token tidak valid! Webhook ditolak.', 'error');
+                return false;
+            }
+            
+            // Tambah timestamp
+            const eventData = {
+                ...data,
+                timestamp: new Date().toISOString(),
+                receivedAt: new Date().toLocaleString('id-ID')
+            };
+            
+            // Tambah ke array events
+            events.unshift(eventData);
+            
+            // Update statistik
+            totalTransactions++;
+            
+            // Cek jika transaksi hari ini
+            const eventDate = new Date(eventData.timestamp).toDateString();
+            if (eventDate === today) {
+                todayTransactions++;
+            }
+            
+            // Update produk populer
+            if (eventData.product) {
+                if (popularProducts[eventData.product]) {
+                    popularProducts[eventData.product] += 1;
+                } else {
+                    popularProducts[eventData.product] = 1;
+                }
+            }
+            
+            // Simpan ke localStorage
+            localStorage.setItem('socialbuzzEvents', JSON.stringify(events));
+            
+            // Update tampilan
+            updateStatsDisplay();
+            updatePopularProductsDisplay();
+            renderEvents();
+            
+            // Tampilkan notifikasi
+            const productName = eventData.product || 'Produk';
+            const amount = eventData.amount || 0;
+            showNotification(`Transaksi baru: ${productName} - Rp ${amount.toLocaleString()}`, 'success');
+            
+            // Mainkan suara
+            playNotificationSound();
+            
+            return true;
+        }
+        
+        // Mainkan suara notifikasi
+        function playNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log("Audio tidak didukung di browser ini");
+            }
+        }
+        
+        // Render events
+        function renderEvents() {
+            const eventList = document.getElementById('eventList');
+            const noEvents = document.getElementById('noEvents');
+            
+            if (events.length === 0) {
+                noEvents.style.display = 'block';
+                return;
+            }
+            
+            noEvents.style.display = 'none';
+            
+            const recentEvents = events.slice(0, 10);
+            
+            eventList.innerHTML = recentEvents.map((event, index) => {
+                const isNew = index === 0 && Date.now() - new Date(event.timestamp).getTime() < 60000;
+                
+                return `
+                    <div class="event-item ${isNew ? 'new' : ''}">
+                        <div class="event-header">
+                            <div class="event-type">TRANSAKSI</div>
+                            <div class="event-time">${formatTime(event.timestamp)}</div>
+                        </div>
+                        <div class="event-details">
+                            <div class="event-field">
+                                <div class="field-label">Produk:</div>
+                                <div class="field-value">${event.product || 'Tidak diketahui'}</div>
+                            </div>
+                            <div class="event-field">
+                                <div class="field-label">Harga:</div>
+                                <div class="field-value amount">Rp ${event.amount ? event.amount.toLocaleString() : '0'}</div>
+                            </div>
+                            <div class="event-field">
+                                <div class="field-label">Pembeli:</div>
+                                <div class="field-value">${event.customer?.name || event.customer || 'Tidak diketahui'}</div>
+                            </div>
+                            <div class="event-field">
+                                <div class="field-label">Email:</div>
+                                <div class="field-value">${event.customer?.email || event.email || 'Tidak diketahui'}</div>
+                            </div>
+                            <div class="event-field">
+                                <div class="field-label">ID Transaksi:</div>
+                                <div class="field-value">${event.transaction_id || event.transactionId || 'N/A'}</div>
+                            </div>
+                            ${event.event ? `
+                            <div class="event-field">
+                                <div class="field-label">Event:</div>
+                                <div class="field-value">${event.event}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Generate data test
+        function generateTestData() {
+            const products = [
+                "Kopi Premium Arabica", 
+                "Kaos Limited Edition", 
+                "E-book Digital Marketing", 
+                "Kursus Online Premium", 
+                "Sticker Pack Eksklusif"
+            ];
+            
+            const customers = [
+                "Budi Santoso", 
+                "Sari Dewi", 
+                "Ahmad Fauzi", 
+                "Maria Magdalena", 
+                "Rizky Pratama"
+            ];
+            
+            const randomProduct = products[Math.floor(Math.random() * products.length)];
+            const randomCustomer = customers[Math.floor(Math.random() * customers.length)];
+            const randomAmount = Math.floor(Math.random() * 500000) + 50000;
+            
+            return {
+                event: "payment.success",
+                transaction_id: "SB-" + Date.now().toString().slice(-8),
+                customer: {
+                    name: randomCustomer,
+                    email: `${randomCustomer.toLowerCase().replace(' ', '.')}@email.com`
+                },
+                product: randomProduct,
+                amount: randomAmount,
+                currency: "IDR",
+                timestamp: new Date().toISOString()
+            };
+        }
+        
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inisialisasi
+            initializeStats();
+            renderEvents();
+            setupWebhookEndpoint();
+            
+            // Set URL webhook
+            const webhookUrl = `${window.location.origin}${WEBHOOK_ENDPOINT}`;
+            const webhookUrlElement = document.getElementById('webhookUrl');
+            const correctWebhookUrlElement = document.getElementById('correctWebhookUrl');
+            
+            webhookUrlElement.textContent = webhookUrl;
+            correctWebhookUrlElement.textContent = webhookUrl;
+            
+            // Copy token button
+            document.getElementById('copyTokenBtn').addEventListener('click', function() {
+                navigator.clipboard.writeText(REQUIRED_TOKEN).then(() => {
+                    showNotification('Token berhasil disalin! Tempel di SocialBuzz', 'success');
+                });
+            });
+            
+            // Clear events button
+            document.getElementById('clearEventsBtn').addEventListener('click', function() {
+                if (confirm('Hapus semua data transaksi?')) {
+                    events = [];
+                    totalTransactions = 0;
+                    todayTransactions = 0;
+                    popularProducts = {};
+                    localStorage.removeItem('socialbuzzEvents');
+                    renderEvents();
+                    updateStatsDisplay();
+                    updatePopularProductsDisplay();
+                    showNotification('Semua data telah dihapus', 'error');
+                }
+            });
+            
+            // Simulasikan webhook masuk secara otomatis untuk demo
+            setInterval(() => {
+                if (Math.random() < 0.1) { // 10% chance
+                    const testData = generateTestData();
+                    processWebhook(testData, REQUIRED_TOKEN);
+                }
+            }, 15000);
+            
+            // Buat endpoint POST simulation
+            console.log(`Untuk test dari curl:`);
+            console.log(`curl -X POST ${webhookUrl} \\
+  -H "Content-Type: application/json" \\
+  -H "X-Webhook-Token: ${REQUIRED_TOKEN}" \\
+  -d '{"event":"payment.success","product":"Test Product","amount":100000}'`);
+            
+            // Export fungsi untuk testing
+            window.testWebhook = function() {
+                const testData = generateTestData();
+                processWebhook(testData, REQUIRED_TOKEN);
+            };
+            
+            // Event untuk test langsung dari console
+            window.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 't') {
+                    window.testWebhook();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
